@@ -1,0 +1,29 @@
+@import "tailwindcss";
+
+/* Light mode overrides for Tailwind v4 slate color variables */
+html.light {
+  /* Swap slate dark backgrounds to slate lights */
+  --color-slate-950: #f8fafc; /* slate-50 */
+  --color-slate-900: #ffffff;  /* white */
+  --color-slate-850: #f1f5f9;  /* slate-100 */
+  --color-slate-800: #e2e8f0;  /* slate-200 */
+  
+  /* Swap slate text colors from light to dark */
+  --color-slate-100: #0f172a; /* slate-900 */
+  --color-slate-200: #1e293b; /* slate-800 */
+  --color-slate-300: #334155; /* slate-700 */
+  --color-slate-350: #334155;
+  --color-slate-355: #334155;
+  
+  /* Swap mid-range slates to secondary text colors */
+  --color-slate-400: #475569; /* slate-600 */
+  --color-slate-500: #64748b; /* slate-500 */
+  --color-slate-505: #64748b;
+  --color-slate-600: #94a3b8; /* slate-400 */
+}
+
+/* Adjust map attribution and text in light mode */
+html.light .leaflet-control-attribution,
+html.light .leaflet-control-attribution a {
+  color: #475569 !important;
+}
