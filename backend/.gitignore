@@ -1,0 +1,18 @@
+# Environments
+.env
+.env.*
+
+# Python Cache
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Virtual Environments
+.venv/
+venv/
+ENV/
+
+# Local media uploads
+static/uploads/
+secret/
