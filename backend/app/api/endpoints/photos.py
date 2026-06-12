@@ -73,7 +73,49 @@ async def upload_photo(
 
     # Read file bytes for EXIF extraction
     file_bytes = await file.read()
-    await file.seek(0)  # Reset for storage upload
+
+    # Convert HEIC to JPEG on the backend
+    is_heic = False
+    if file.filename:
+        filename_lower = file.filename.lower()
+        if filename_lower.endswith(".heic") or filename_lower.endswith(".heif") or file.content_type in {"image/heic", "image/heif"}:
+            is_heic = True
+
+    if is_heic:
+        from PIL import Image
+        from pillow_heif import register_heif_opener
+        import io
+        register_heif_opener()
+        try:
+            image = Image.open(io.BytesIO(file_bytes))
+            exif_bytes = image.info.get('exif')
+            if image.mode != "RGB":
+                image = image.convert("RGB")
+            out_buffer = io.BytesIO()
+            if exif_bytes:
+                image.save(out_buffer, format="JPEG", quality=90, exif=exif_bytes)
+            else:
+                image.save(out_buffer, format="JPEG", quality=90)
+            file_bytes = out_buffer.getvalue()
+            
+            new_filename = file.filename
+            if "." in new_filename:
+                new_filename = ".".join(new_filename.split(".")[:-1]) + ".jpg"
+            else:
+                new_filename = new_filename + ".jpg"
+            
+            file = UploadFile(
+                file=io.BytesIO(file_bytes),
+                filename=new_filename,
+                headers={"content-type": "image/jpeg"}
+            )
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Failed to process HEIC file: {str(e)}"
+            )
+    else:
+        await file.seek(0)  # Reset for storage upload
 
     # Extract EXIF metadata
     exif_data = extract_exif(file_bytes)

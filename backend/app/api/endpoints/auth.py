@@ -8,9 +8,18 @@ from app.core.security import (
     create_access_token,
     create_refresh_token,
     decode_token,
+    create_password_reset_token,
 )
 from app.models.user import User
-from app.schemas.user import UserCreate, UserOut, UserLogin, Token, TokenRefreshRequest
+from app.schemas.user import (
+    UserCreate,
+    UserOut,
+    UserLogin,
+    Token,
+    TokenRefreshRequest,
+    ForgotPasswordRequest,
+    ResetPasswordRequest,
+)
 from jose import jwt
 from pydantic import ValidationError
 
@@ -112,4 +121,54 @@ def refresh_token(refresh_in: TokenRefreshRequest, db: Session = Depends(get_db)
         "refresh_token": new_refresh_token,
         "token_type": "bearer",
     }
+
+
+@router.post("/forgot-password")
+def forgot_password(forgot_in: ForgotPasswordRequest, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == forgot_in.email).first()
+    if not user:
+        return {"message": "If the email exists, a password reset link has been generated."}
+
+    token = create_password_reset_token(forgot_in.email)
+    
+    # Printed to stdout for local/dev use
+    reset_link = f"http://localhost:5173/reset-password?token={token}"
+    print(f"\n[PASSWORD RESET LINK]: {reset_link}\n", flush=True)
+
+    return {
+        "message": "If the email exists, a password reset link has been generated.",
+        "reset_token_dev": token
+    }
+
+
+@router.post("/reset-password")
+def reset_password(reset_in: ResetPasswordRequest, db: Session = Depends(get_db)):
+    try:
+        payload = decode_token(reset_in.token)
+        token_type = payload.get("type")
+        if token_type != "password_reset":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid token type",
+            )
+        email = payload.get("sub")
+    except (jwt.JWTError, ValidationError):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="The password reset link is invalid or has expired.",
+        )
+
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+
+    user.hashed_password = get_password_hash(reset_in.password)
+    db.add(user)
+    db.commit()
+
+    return {"message": "Password updated successfully!"}
+
 

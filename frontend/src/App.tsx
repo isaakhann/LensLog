@@ -14,6 +14,7 @@ import { Profile } from './pages/Profile';
 import { Upload } from './pages/Upload';
 import { PhotoDetail } from './pages/PhotoDetail';
 import { Social } from './pages/Social';
+import { ResetPassword } from './pages/ResetPassword';
 import { Loader2 } from 'lucide-react';
 
 const queryClient = new QueryClient({
@@ -84,6 +85,14 @@ function App() {
               element={
                 <PublicRoute>
                   <Register />
+                </PublicRoute>
+              }
+            />
+            <Route
+              path="/reset-password"
+              element={
+                <PublicRoute>
+                  <ResetPassword />
                 </PublicRoute>
               }
             />

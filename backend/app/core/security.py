@@ -50,3 +50,10 @@ def create_refresh_token(
 def decode_token(token: str) -> dict:
     """Decodes JWT token and returns payload, raises JWTError on invalid tokens"""
     return jwt.decode(token, settings.SECRET_KEY, algorithms=[ALGORITHM])
+
+
+def create_password_reset_token(email: str) -> str:
+    expire = datetime.now(timezone.utc) + timedelta(minutes=15)
+    to_encode = {"exp": expire, "sub": email, "type": "password_reset"}
+    encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt

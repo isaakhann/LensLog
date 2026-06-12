@@ -12,3 +12,4 @@ pillow
 pytest
 httpx
 bcrypt
+pillow-heif
