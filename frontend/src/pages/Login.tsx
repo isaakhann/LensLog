@@ -11,6 +11,8 @@ export const Login: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const [showForgotModal, setShowForgotModal] = useState(false);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!usernameOrEmail || !password) {
@@ -78,6 +80,13 @@ export const Login: React.FC = () => {
               <label className="block text-xs uppercase tracking-wider text-slate-400 font-medium">
                 Password
               </label>
+              <button
+                type="button"
+                onClick={() => setShowForgotModal(true)}
+                className="text-xs text-cyan-400 hover:text-cyan-300 transition-colors focus:outline-none"
+              >
+                Forgot password?
+              </button>
             </div>
             <input
               type="password"
@@ -116,6 +125,29 @@ export const Login: React.FC = () => {
           </Link>
         </div>
       </div>
+
+      {/* Forgot Password Modal */}
+      {showForgotModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-full max-w-sm bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="flex items-center gap-3 text-cyan-400 mb-4">
+              <AlertCircle className="w-6 h-6" />
+              <h3 className="text-lg font-semibold text-slate-100">Password Reset</h3>
+            </div>
+            <p className="text-sm text-slate-400 leading-relaxed mb-6">
+              For security reasons, self-service password resets are disabled on this instance. 
+              Please contact your system administrator or send an email to <span className="text-cyan-400 font-medium">admin@lenslog.com</span> to request a reset.
+            </p>
+            <button
+              type="button"
+              onClick={() => setShowForgotModal(false)}
+              className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white font-medium rounded-xl border border-slate-700/50 transition-colors"
+            >
+              Okay, got it
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

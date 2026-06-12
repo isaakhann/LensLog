@@ -12,6 +12,8 @@ import {
   Smile,
   Heart
 } from 'lucide-react';
+// @ts-ignore
+import heic2any from 'heic2any';
 import { api } from '../services/api';
 
 interface FileUploadState {
@@ -38,6 +40,7 @@ export const Upload: React.FC = () => {
   // Files State
   const [files, setFiles] = useState<FileUploadState[]>([]);
   const [isDragging, setIsDragging] = useState(false);
+  const [isConverting, setIsConverting] = useState(false);
   const [globalUploadStatus, setGlobalUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
   const [globalError, setGlobalError] = useState<string | null>(null);
 
@@ -50,24 +53,74 @@ export const Upload: React.FC = () => {
     setIsDragging(false);
   };
 
-  const addFiles = (selectedFiles: FileList | null) => {
+  const addFiles = async (selectedFiles: FileList | null) => {
     if (!selectedFiles) return;
 
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif', 'image/tiff'];
     const newFiles: FileUploadState[] = [];
+    setGlobalError(null);
 
+    let containsHeic = false;
     for (let i = 0; i < selectedFiles.length; i++) {
       const file = selectedFiles[i];
-      if (allowedTypes.includes(file.type) || file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif')) {
-        newFiles.push({
-          file,
-          previewUrl: URL.createObjectURL(file),
-          progress: 0,
-          status: 'idle'
-        });
-      } else {
-        setGlobalError(`File type of ${file.name} is not supported.`);
+      const isHeic = file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif') || file.type === 'image/heic' || file.type === 'image/heif';
+      if (isHeic) {
+        containsHeic = true;
+        break;
       }
+    }
+
+    if (containsHeic) {
+      setIsConverting(true);
+    }
+
+    try {
+      for (let i = 0; i < selectedFiles.length; i++) {
+        const file = selectedFiles[i];
+        const isHeic = file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif') || file.type === 'image/heic' || file.type === 'image/heif';
+
+        if (allowedTypes.includes(file.type) || isHeic) {
+          if (isHeic) {
+            try {
+              const convertedBlob = await heic2any({
+                blob: file,
+                toType: 'image/jpeg',
+                quality: 0.8
+              });
+              const blob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+              const newFileName = file.name.replace(/\.[^/.]+$/, "") + ".jpg";
+              const convertedFile = new File([blob], newFileName, {
+                type: 'image/jpeg',
+                lastModified: Date.now()
+              });
+
+              newFiles.push({
+                file: convertedFile,
+                previewUrl: URL.createObjectURL(convertedFile),
+                progress: 0,
+                status: 'idle'
+              });
+            } catch (err: any) {
+              console.error("HEIC conversion failed for file:", file.name, err);
+              setGlobalError(`Failed to convert HEIC image: ${file.name}. It may be corrupted.`);
+            }
+          } else {
+            newFiles.push({
+              file,
+              previewUrl: URL.createObjectURL(file),
+              progress: 0,
+              status: 'idle'
+            });
+          }
+        } else {
+          setGlobalError(`File type of ${file.name} is not supported.`);
+        }
+      }
+    } catch (err: any) {
+      console.error(err);
+      setGlobalError('An error occurred during file processing.');
+    } finally {
+      setIsConverting(false);
     }
 
     setFiles(prev => [...prev, ...newFiles]);
@@ -195,6 +248,16 @@ export const Upload: React.FC = () => {
           <div>
             <p className="font-semibold text-sm">Upload Successful!</p>
             <p className="text-xs text-emerald-300/95 mt-0.5">All photos uploaded. Redirecting to gallery...</p>
+          </div>
+        </div>
+      )}
+
+      {isConverting && (
+        <div className="p-4 bg-cyan-950/40 border border-cyan-800/60 rounded-2xl flex items-center gap-3 text-cyan-200 animate-pulse">
+          <Loader2 className="w-5 h-5 text-cyan-400 shrink-0 animate-spin" />
+          <div>
+            <p className="font-semibold text-sm">Processing HEIC Photos...</p>
+            <p className="text-xs text-cyan-300/95 mt-0.5">Converting High-Efficiency files to standard JPEGs directly in the browser.</p>
           </div>
         </div>
       )}

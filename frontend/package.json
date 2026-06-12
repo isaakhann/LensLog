@@ -16,6 +16,7 @@
     "browser-image-compression": "^2.0.2",
     "clsx": "^2.1.1",
     "exifreader": "^4.41.0",
+    "heic2any": "^0.0.4",
     "leaflet": "^1.9.4",
     "lucide-react": "^1.17.0",
     "mapbox-gl": "^3.24.0",
